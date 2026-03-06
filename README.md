@@ -1,1 +1,1 @@
-# templates
+# psi cli tool
