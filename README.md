@@ -5,7 +5,7 @@
 ## Install
 
 ```bash
-python -m pip install psicli psihub lllm-core sssn
+python -m pip install prosi-psi-cli psihub lllm-core sssn
 ```
 
 ## Launch A Package
