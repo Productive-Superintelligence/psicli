@@ -1,4 +1,4 @@
-"""Credential requirement helpers for the PSI CLI."""
+"""Credential requirement helpers for PsiCLI."""
 
 from __future__ import annotations
 

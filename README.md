@@ -1,7 +1,7 @@
-# Psi CLI
+# PsiCLI
 
-`psi` is the user-facing command line for setting up and running PSI packages
-locally.
+PsiCLI exposes the user-facing `psi` command for setting up and running PSI
+packages locally.
 
 ## Install
 
