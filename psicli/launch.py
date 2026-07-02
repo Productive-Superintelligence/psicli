@@ -9,6 +9,8 @@ from typing import Any
 
 from psihub import import_entrypoint, load_manifest
 
+from .auth import ApiKeyRequirement, collect_manifest_api_key_requirements
+
 
 class LaunchError(ValueError):
     """Raised when a target cannot be launched as a service."""
@@ -43,6 +45,26 @@ def load_launch_app(
     raise LaunchError(
         "launch target must be a package path, psi.toml path, or module:attribute entrypoint"
     )
+
+
+def load_launch_api_key_requirements(
+    target: str | Path,
+    *,
+    resource: str | None = None,
+) -> tuple[ApiKeyRequirement, ...]:
+    """Resolve API-key requirements declared by a launchable package."""
+
+    target_text = _target_text(target)
+    path = Path(target_text).expanduser()
+    if path.exists() or path.name == "psi.toml":
+        manifest = load_manifest(path)
+        section, name = _package_resource(manifest, resource)
+        return collect_manifest_api_key_requirements(
+            manifest,
+            section=section,
+            name=name,
+        )
+    return ()
 
 
 def _load_package_app(

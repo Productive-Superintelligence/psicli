@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from psicli import load_launch_app
+from psicli import load_launch_api_key_requirements, load_launch_app
 from psicli.cli import main
 
 
@@ -145,6 +146,135 @@ entry = "demo.tactics:Echo"
 
     assert "demo/launch-demo:tactics.echo" in out
     assert "POST /run" in out
+
+
+def test_package_api_key_requirements_are_discovered(tmp_path: Path):
+    package = _write_package(
+        tmp_path,
+        primary="services.api",
+        body="""
+[requirements.api_keys]
+OPENAI_API_KEY = "OpenAI model access."
+
+[tactics.echo]
+entry = "demo.tactics:Echo"
+
+[tactics.echo.metadata.required_api_keys]
+ANTHROPIC_API_KEY = "Claude fallback model access."
+
+[services.api]
+tactic = "echo"
+transport = "fastapi"
+""",
+    )
+    _write(package / "demo" / "tactics.py", _echo_tactic_source())
+
+    requirements = load_launch_api_key_requirements(package)
+
+    assert {requirement.name for requirement in requirements} == {
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+    }
+
+
+def test_launch_blocks_missing_required_api_key_before_import(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+):
+    package = _write_package(
+        tmp_path,
+        primary="tactics.echo",
+        body="""
+[requirements.api_keys]
+OPENAI_API_KEY = "OpenAI model access."
+
+[tactics.echo]
+entry = "demo.tactics:Echo"
+""",
+    )
+    _write(package / "demo" / "tactics.py", "raise RuntimeError('imported too early')\n")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    with pytest.raises(SystemExit) as exc:
+        main(["launch", str(package), "--no-keyring"])
+
+    assert exc.value.code == 2
+    err = capsys.readouterr().err
+    assert "OPENAI_API_KEY" in err
+    assert "psi init" in err
+    assert "imported too early" not in err
+
+
+def test_init_writes_required_keys_to_local_env_file(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+):
+    package = _write_package(
+        tmp_path,
+        primary="tactics.echo",
+        body="""
+[requirements.api_keys]
+OPENAI_API_KEY = "OpenAI model access."
+
+[tactics.echo]
+entry = "demo.tactics:Echo"
+""",
+    )
+    _write(package / "demo" / "tactics.py", _echo_tactic_source())
+    env_file = tmp_path / ".env.local"
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    assert (
+        main(
+            [
+                "init",
+                str(package),
+                "--credentials",
+                "env",
+                "--env-file",
+                str(env_file),
+                "--set",
+                "OPENAI_API_KEY=sk-test-secret",
+            ]
+        )
+        == 0
+    )
+    out = capsys.readouterr().out
+
+    assert "Configured 1 API key" in out
+    assert "sk-test-secret" not in out
+    assert 'OPENAI_API_KEY="sk-test-secret"' in env_file.read_text(encoding="utf-8")
+
+
+def test_inspect_reports_api_key_status_from_env_file(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+):
+    package = _write_package(
+        tmp_path,
+        primary="tactics.echo",
+        body="""
+[requirements.api_keys]
+OPENAI_API_KEY = "OpenAI model access."
+
+[tactics.echo]
+entry = "demo.tactics:Echo"
+""",
+    )
+    _write(package / "demo" / "tactics.py", _echo_tactic_source())
+    env_file = tmp_path / ".env.local"
+    env_file.write_text('OPENAI_API_KEY="sk-test-secret"\n', encoding="utf-8")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    assert main(["inspect", str(package), "--env-file", str(env_file), "--json"]) == 0
+    payload = capsys.readouterr().out
+
+    assert '"name": "OPENAI_API_KEY"' in payload
+    assert '"ready": true' in payload
+    assert "sk-test-secret" not in payload
 
 
 def _write_package(

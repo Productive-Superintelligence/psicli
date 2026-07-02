@@ -4,23 +4,27 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "prosi-psi-cli"
-version = "0.1.0"
+version = "0.1.2"
 description = "User-facing PSI command line tools."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
 dependencies = [
-  "lllm-core>=0.2.0",
-  "psihub>=0.0.1",
-  "sssn>=0.1.0",
+  "lllm-core[server]>=0.2.0",
+  "psihub>=0.0.2",
+  "sssn[server]>=0.1.0",
   "uvicorn>=0.30",
 ]
 
 [project.optional-dependencies]
+secure = [
+  "keyring>=25.0",
+]
 dev = [
   "build>=1.2",
   "fastapi>=0.115",
   "httpx>=0.27",
+  "keyring>=25.0",
   "pytest>=8.0",
   "twine>=5.1",
 ]
@@ -29,7 +33,7 @@ dev = [
 psi = "psicli.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/Productive-Superintelligence/psicli"
+Homepage = "https://prosi.io/cli/docs"
 Source = "https://github.com/Productive-Superintelligence/psicli"
 Issues = "https://github.com/Productive-Superintelligence/psicli/issues"
 
