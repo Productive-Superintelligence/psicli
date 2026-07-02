@@ -1,0 +1,50 @@
+<section class="page-section" aria-labelledby="cli-title">
+    <p class="label">CLI</p>
+    <h1 id="cli-title">PSI command line.</h1>
+    <hr />
+    <p class="section-copy">
+        <code>psi</code> is the local command line for preparing credentials,
+        inspecting PSI packages, and launching package resources as services.
+    </p>
+    <p class="section-copy muted">
+        Packages declare what they need. The CLI checks those requirements
+        before import, then reads secrets from the process environment, OS
+        keyring, or a local env file.
+    </p>
+
+    <div class="page-list">
+        <div>
+            <span class="item-title">Install</span>
+            <span class="item-copy">Install the CLI with the PSI packages it can launch.</span>
+            <pre><code>python -m pip install prosi-psi-cli psihub lllm-core sssn</code></pre>
+            <span class="item-copy">Install optional keyring support when you want OS-backed storage.</span>
+            <pre><code>python -m pip install "prosi-psi-cli[secure]"</code></pre>
+        </div>
+        <div>
+            <span class="item-title">Declare Required Keys</span>
+            <span class="item-copy">A package names required provider credentials in <code>psi.toml</code>; values stay local.</span>
+            <pre><code>[requirements.api_keys]
+OPENAI_API_KEY = "OpenAI-compatible model access."
+ANTHROPIC_API_KEY = "Claude model access."</code></pre>
+        </div>
+        <div>
+            <span class="item-title">Initialize</span>
+            <span class="item-copy">Set up the keys required by a package before launching it.</span>
+            <pre><code>psi init packages/analyst-tactics
+psi init packages/analyst-tactics --credentials keyring
+psi init packages/analyst-tactics --credentials env --env-file .env.local</code></pre>
+        </div>
+        <div>
+            <span class="item-title">Launch</span>
+            <span class="item-copy">Launch checks required keys before importing package code.</span>
+            <pre><code>psi launch packages/analyst-tactics --port 8000
+psi launch packages/society-sentinel --resource services.sentinel_api --port 8130</code></pre>
+        </div>
+        <div>
+            <span class="item-title">Inspect</span>
+            <span class="item-copy">Inspect reports routes and credential readiness without printing secret values.</span>
+            <pre><code>psi inspect packages/analyst-tactics
+psi inspect packages/analyst-tactics --json</code></pre>
+        </div>
+    </div>
+</section>
